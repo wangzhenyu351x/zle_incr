@@ -9,14 +9,14 @@ zle -N self-insert self-insert-incr
 # zle -N backward-delete-char backward-delete-char-incr
 
 ## tab 会执行这个方法
-zle -N expand-or-complete-prefix-incr
+# zle -N expand-or-complete-prefix-incr
 
 # zle -N vi-backward-delete-char-incr
 zle -N backward-delete-char-incr
 
 
-zle -N expand-or-complete-incr
-zle -N expand-or-complete expand-or-complete-incr
+# zle -N expand-or-complete-incr
+# zle -N expand-or-complete expand-or-complete-incr
 
 
 # zle -N 
@@ -39,13 +39,13 @@ compdef -d cvs
 now_predict=0
 
 incr::zecho() {
-	# echo $@ > /dev/ttys001
+	echo $@ > /dev/ttys004
 }
 
 function limit-completion
 {
 	
-	incr::zecho $0 $@
+	# incr::zecho $0 $@
 	if ((compstate[nmatches] <= 1)); then
 		zle -M ""
 	elif ((compstate[list_lines] > 6)); then
@@ -79,7 +79,7 @@ function remove-prediction
 function show-prediction
 {
 
-	incr::zecho  $0 $@
+	# incr::zecho  'preBUFFER'$PREBUFFER $PENDING
 	# assert(now_predict == 0)
 	if
 		((PENDING == 0)) &&
@@ -93,16 +93,21 @@ function show-prediction
 		zle complete-word
 		cursor_prd="$CURSOR"
 		buffer_prd="$BUFFER"
+		# incr::zecho "$buffer_org[1,cursor_org]"  $buffer_prd "$buffer_prd[1,cursor_org]"
 		if [[ "$buffer_org[1,cursor_org]" == "$buffer_prd[1,cursor_org]" ]]; then
 			CURSOR="$cursor_org"
+			BUFFER="$buffer_org"
 			if [[ "$buffer_org" != "$buffer_prd" ]] || ((cursor_org != cursor_prd)); then
 				now_predict=1
+
 			fi
 		else
 			BUFFER="$buffer_org"
 			# BUFFER="this is zhenyu edit"
 			CURSOR="$cursor_org"
 		fi
+		# POSTDISPLAY='hahah'
+		# BUFFER=$buffer_org
 		echo -n "\e[32m"
 	else
 		zle -M ""
