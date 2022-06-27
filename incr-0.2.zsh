@@ -35,11 +35,6 @@ compdef -d java
 compdef -d svn
 compdef -d cvs
 
-# TODO:
-#     cp dir/
-
-now_predict=0
-
 incr::zecho() {
 	# echo $@ > /dev/ttys000
 	
@@ -49,79 +44,24 @@ function limit-completion
 {
 	incr::zecho $0
 	# incr::zecho $0 $@
-	if ((compstate[nmatches] <= 1)); then
+	if ((compstate[nmatches] <= 0)); then
 		zle -M ""
-	elif ((compstate[nmatches] == 1)); then
-		# echo ${compstate[list]} > /dev/ttys000
-		# zle -M "$BUFFER"
 	elif ((compstate[list_lines] > 6)); then
 		compstate[list]=""
 		zle -M "too many matches."
 	fi
 }
 
-function correct-prediction
-{
-	# return
-	incr::zecho $0
-	if ((now_predict == 1)); then
-		## 
-		if [[ "$BUFFER" != "$buffer_prd" ]] || ((CURSOR != cursor_org)) ; then
-			now_predict=0
-		fi
-	fi
-}
-
-function remove-prediction
-{
-	incr::zecho  $0 $@
-	if ((now_predict == 1)); then
-		BUFFER="$buffer_org"
-		# BUFFER='this is test by zhenyu'
-		now_predict=0
-	fi
-}
-
 function show-prediction
 {
-
-	incr::zecho $0
-	# incr::zecho  'preBUFFER'$PREBUFFER $PENDING
-	# assert(now_predict == 0)
-	# POSTDISPLAY=''
 	if
 		((PENDING == 0)) &&
 		((CURSOR > 1)) &&
 		[[ "$PREBUFFER" == "" ]] &&
 		[[ "$BUFFER[CURSOR]" != " " ]]
 	then
-		cursor_org="$CURSOR"
-		buffer_org="$BUFFER"
-		comppostfuncs=(limit-completion) # 
-		zle complete-word
-		cursor_prd="$CURSOR"
-		buffer_prd="$BUFFER"
-		# incr::zecho "$buffer_org[1,cursor_org]"  $buffer_prd "$buffer_prd[1,cursor_org]"
-		if [[ "$buffer_org[1,cursor_org]" == "$buffer_prd[1,cursor_org]" ]]; then
-			cur_index=cursor_org+1
-			# POSTDISPLAY=$buffer_prd[cur_index,$]
-			# tmpStr=$buffer_prd[cur_index,$]
-			
-			BUFFER="$buffer_org"
-			CURSOR="$cursor_org"
-			if [[ "$buffer_org" != "$buffer_prd" ]] || ((cursor_org != cursor_prd)); then
-				now_predict=1
-				# echo $(basename $buffer_prd) > /dev/ttys000
-				# zle -M "$buffer_prd"
-			fi
-		else
-			# POSTDISPLAY=''
-			BUFFER="$buffer_org"
-			# BUFFER="this is zhenyu edit"
-			CURSOR="$cursor_org"
-		fi
-		# POSTDISPLAY='hahah'
-		# BUFFER=$buffer_org
+		comppostfuncs=(limit-completion) 
+		zle list-choices
 		echo -n "\e[32m"
 	else
 
@@ -133,8 +73,6 @@ function show-prediction
 function self-insert-incr
 {
 	incr::zecho  $0 $@
-	correct-prediction
-	remove-prediction
 	if zle .self-insert; then
 		show-prediction
 	fi
@@ -144,8 +82,6 @@ function backward-delete-char-incr
 {
 	# incr::zecho  backward-delete-char-incr $@
 	incr::zecho $0
-	correct-prediction
-	remove-prediction
 	if zle backward-delete-char; then
 		show-prediction
 	fi
@@ -155,17 +91,14 @@ function backward-delete-char-incr
 function expand-or-complete-incr
 {
 	incr::zecho  'here'
-	correct-prediction
-	if ((now_predict == 1)); then
-		CURSOR="$cursor_prd"
-		now_predict=0
+	if [[ -n $BUFFER ]]; then
+		# echo 'complete_predict' > /dev/ttys000
+		zle expand-or-complete
+	else
+		BUFFER="cd " 
+		zle end-of-line
 		comppostfuncs=(limit-completion)
 		zle list-choices
-
-	else
-		remove-prediction
-		zle expand-or-complete
 	fi
-	# POSTDISPLAY=''
 }
 
